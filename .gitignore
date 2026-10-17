@@ -1,0 +1,52 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+x64/
+x86/
+ARM64/
+install/
+AppPackages/
+*.appx
+*.appxupload
+*.msix
+*.msixupload
+*.msi
+*.msp
+*.cab
+
+# Visual Studio / MSBuild
+.vs/
+*.user
+*.suo
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+*.tlog
+*.log
+*.pdb
+*.ilk
+*.idb
+*.ipch
+*.obj
+*.lastbuildstate
+*.res
+*.resources
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Signing
+*.pfx
+*.cer
+*.pvk
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Local tooling
+.idea/
+.vscode/

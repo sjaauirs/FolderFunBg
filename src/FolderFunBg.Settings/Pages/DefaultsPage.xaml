@@ -1,0 +1,88 @@
+<Page
+    x:Class="FolderFunBg.Settings.Pages.DefaultsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="16" HorizontalAlignment="Left">
+            <TextBlock Text="Defaults" Style="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock
+                Text="These settings apply to folders without a rule or with unspecified fields."
+                Opacity="0.75" />
+
+            <InfoBar x:Name="StatusBar" IsOpen="False" />
+
+            <Grid ColumnSpacing="24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Spacing="12" MinWidth="340">
+                    <ComboBox
+                        x:Name="ImageBox"
+                        Width="320"
+                        Header="Default image"
+                        PlaceholderText="None"
+                        SelectionChanged="Preview_SelectionChanged" />
+                    <ComboBox
+                        x:Name="PositionBox"
+                        Width="220"
+                        Header="Position"
+                        SelectionChanged="Preview_SelectionChanged" />
+                    <NumberBox
+                        x:Name="AlphaBox"
+                        Width="220"
+                        Header="Image alpha (0-255)"
+                        Minimum="0"
+                        Maximum="255"
+                        ValueChanged="Preview_ValueChanged" />
+                    <ToggleSwitch
+                        x:Name="RandomSwitch"
+                        Header="Pick a random image"
+                        Toggled="Preview_Toggled" />
+
+                    <TextBlock Text="Readability" FontWeight="SemiBold" Margin="0,8,0,0" />
+                    <ComboBox
+                        x:Name="ReadabilityBox"
+                        Width="220"
+                        Header="Scrim mode"
+                        SelectionChanged="Preview_SelectionChanged" />
+                    <NumberBox
+                        x:Name="ScrimBox"
+                        Width="220"
+                        Header="Scrim strength (0-255)"
+                        Minimum="0"
+                        Maximum="255"
+                        ValueChanged="Preview_ValueChanged" />
+                    <ToggleSwitch
+                        x:Name="GradientSwitch"
+                        Header="Left-to-right gradient"
+                        Toggled="Preview_Toggled" />
+
+                    <Button
+                        Content="Save defaults"
+                        Click="Save_Click"
+                        Style="{StaticResource AccentButtonStyle}" />
+                    <TextBlock
+                        Text="Auto chooses a white or black scrim from the image luminance and the Windows light/dark theme. The preview approximates it with the current theme."
+                        TextWrapping="Wrap"
+                        Opacity="0.7" />
+                    <TextBlock
+                        Text="Windows 11 composites the image above the file list in this preview. Keep the image in a corner and/or lower its alpha to keep file names readable."
+                        TextWrapping="Wrap"
+                        Opacity="0.7" />
+                </StackPanel>
+
+                <Grid
+                    Grid.Column="1"
+                    Width="480"
+                    Height="270"
+                    Background="#202020">
+                    <Image x:Name="PreviewImage" Stretch="UniformToFill" />
+                    <Rectangle x:Name="ScrimRect" Fill="Transparent" />
+                </Grid>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

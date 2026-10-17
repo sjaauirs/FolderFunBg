@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "imagesRoot": "%LOCALAPPDATA%\\FolderFunBg\\Images",
+  "defaults": {
+    "image": "default.png",
+    "position": "bottom-right",
+    "alpha": 255,
+    "random": false
+  },
+  "readability": {
+    "mode": "auto",
+    "strength": 96,
+    "gradient": true
+  },
+  "folders": [
+    {
+      "path": "C:\\Users\\pc\\Downloads",
+      "image": "downloads.png",
+      "position": "bottom-right",
+      "alpha": 255
+    },
+    {
+      "path": "C:\\Users\\pc\\Documents",
+      "image": "documents.jpg",
+      "readability": {
+        "mode": "light",
+        "strength": 140
+      }
+    },
+    {
+      "clsid": "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}",
+      "image": "thispc.png"
+    }
+  ]
+}

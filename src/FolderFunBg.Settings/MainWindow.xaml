@@ -1,0 +1,21 @@
+<Window
+    x:Class="FolderFunBg.Settings.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="FolderFunBg Settings">
+
+    <NavigationView
+        x:Name="NavView"
+        PaneDisplayMode="Left"
+        IsBackButtonVisible="Collapsed"
+        IsSettingsVisible="False"
+        SelectionChanged="NavView_SelectionChanged">
+        <NavigationView.MenuItems>
+            <NavigationViewItem Content="Folders" Tag="folders" Icon="Folder" />
+            <NavigationViewItem Content="Image library" Tag="library" Icon="Pictures" />
+            <NavigationViewItem Content="Defaults" Tag="defaults" Icon="Setting" />
+            <NavigationViewItem Content="Settings" Tag="settings" Icon="Repair" />
+        </NavigationView.MenuItems>
+        <Frame x:Name="ContentFrame" />
+    </NavigationView>
+</Window>

@@ -1,0 +1,36 @@
+<Page
+    x:Class="FolderFunBg.Settings.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="16" HorizontalAlignment="Left" MaxWidth="1000">
+            <TextBlock Text="Settings" Style="{StaticResource TitleTextBlockStyle}" />
+
+            <InfoBar x:Name="StatusBar" IsOpen="False" />
+            <TextBlock x:Name="StatusText" TextWrapping="Wrap" />
+
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button Content="Refresh status" Click="Refresh_Click" />
+                <Button
+                    Content="Install extension"
+                    Click="Install_Click"
+                    Style="{StaticResource AccentButtonStyle}" />
+                <Button Content="Uninstall extension" Click="Uninstall_Click" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button Content="Open config folder" Click="OpenConfig_Click" />
+                <Button Content="Open image folder" Click="OpenImages_Click" />
+                <Button Content="Open log folder" Click="OpenLogs_Click" />
+            </StackPanel>
+
+            <Button Content="Import ExplorerBgTool config.ini" Click="ImportLegacy_Click" />
+
+            <TextBlock
+                Text="The extension runs inside Explorer, so closing this app leaves backgrounds active. Installing or uninstalling requires administrator approval and may restart Explorer; save open work first."
+                TextWrapping="Wrap"
+                Opacity="0.7" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

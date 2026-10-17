@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>FolderFunBg.Settings</RootNamespace>
+    <AssemblyName>FolderFunBg.Settings</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FolderFunBg.Core\FolderFunBg.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\installer\*.ps1" CopyToOutputDirectory="PreserveNewest" Link="installer\%(Filename)%(Extension)" />
+    <Content
+      Include="..\..\bin\x64\$(Configuration)\FolderFunBg.Hook.dll"
+      Condition="Exists('..\..\bin\x64\$(Configuration)\FolderFunBg.Hook.dll')"
+      CopyToOutputDirectory="PreserveNewest"
+      Link="FolderFunBg.Hook.dll" />
+  </ItemGroup>
+
+</Project>

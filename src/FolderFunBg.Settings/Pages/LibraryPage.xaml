@@ -1,0 +1,49 @@
+<Page
+    x:Class="FolderFunBg.Settings.Pages.LibraryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:FolderFunBg.Settings.Models">
+
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12">
+            <TextBlock
+                Text="Image library"
+                Style="{StaticResource TitleTextBlockStyle}"
+                VerticalAlignment="Center" />
+            <Button Content="Import images" Click="Import_Click" />
+            <Button Content="Open folder" Click="OpenFolder_Click" />
+        </StackPanel>
+
+        <InfoBar
+            x:Name="StatusBar"
+            Grid.Row="1"
+            IsOpen="False"
+            Margin="0,12,0,12" />
+
+        <GridView
+            Grid.Row="2"
+            ItemsSource="{x:Bind Images}"
+            SelectionMode="None">
+            <GridView.ItemTemplate>
+                <DataTemplate x:DataType="models:ImageItem">
+                    <StackPanel Width="180" Margin="8" Spacing="6">
+                        <Border
+                            Height="120"
+                            CornerRadius="6"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                            <Image Source="{x:Bind Thumbnail}" Stretch="UniformToFill" />
+                        </Border>
+                        <TextBlock Text="{x:Bind FileName}" TextTrimming="CharacterEllipsis" />
+                        <Button Content="Delete" Click="Delete_Click" Tag="{x:Bind}" />
+                    </StackPanel>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+    </Grid>
+</Page>
