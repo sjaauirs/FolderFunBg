@@ -4,6 +4,7 @@
 x64/
 x86/
 ARM64/
+artifacts/
 install/
 AppPackages/
 *.appx

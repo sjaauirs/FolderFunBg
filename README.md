@@ -12,6 +12,26 @@ stay running.
 > if it cannot install, the GDI fallback is composited above the items, so use
 > corner positions and/or lower alpha when the image overlaps file names.
 
+## Install (end users)
+
+Download **FolderFunBg-Setup.exe** from the
+[latest release](https://github.com/sjaauirs/FolderFunBg/releases/latest) and run
+it. The installer requests administrator approval and then:
+
+- installs the hook and the self-contained settings app to
+  `%ProgramFiles%\FolderFunBg`,
+- registers the Explorer extension,
+- creates a **FolderFunBg Settings** Start Menu shortcut,
+- restarts Explorer.
+
+Your images and configuration live in `%LOCALAPPDATA%\FolderFunBg` and are kept
+when you uninstall. To remove the extension, run
+`FolderFunBg-Setup.exe --uninstall`.
+
+The preview EXE is unsigned, so SmartScreen may warn about an unknown publisher.
+Compare the SHA-256 in the release notes with the downloaded file if you want to
+verify it.
+
 ## Features
 
 - Per-folder background image with optional position, alpha, random, recursive,
@@ -38,10 +58,12 @@ stay running.
   validation, atomic writes, image library, and legacy `config.ini` migration.
 - `src/FolderFunBg.Settings` — WinUI 3 settings app.
 - `tests/FolderFunBg.Core.Tests` — xUnit tests for the core.
-- `installer` — elevated install/uninstall scripts.
+- `installer` — elevated install/uninstall scripts and the self-contained
+  setup EXE project.
 
-See `docs/architecture.md` for the hook mechanics and `docs/compatibility.md`
-for the support matrix.
+See `docs/architecture.md` for the hook mechanics, `docs/compatibility.md` for
+the support matrix, and `docs/tutorial.md` for a guided learner's tour of the
+Windows concepts used here.
 
 ## Prerequisites
 
@@ -72,6 +94,17 @@ Outputs:
 
 For a faster native-only build: `build-native.cmd`.
 
+### Build the installer EXE
+
+```powershell
+.\build-installer.ps1
+```
+
+This builds the hook, publishes the settings app self-contained (so the target
+machine does not need .NET installed), packs both into an embedded payload, and
+writes `install\FolderFunBg-Setup.exe` and its `.sha256` file. The installer
+project is in `installer\FolderFunBg.Installer`.
+
 ## Run the settings app
 
 ```powershell
@@ -97,7 +130,10 @@ FolderFunBg.Settings.exe --smoke-test
 It navigates every page, writes `%TEMP%\FolderFunBg-smoke.txt`, and exits with a
 non-zero code if a page fails to load.
 
-## Install
+## Install from source scripts
+
+End users should use the setup EXE above. The scripts below are for development
+and for building the installer.
 
 > **Do not run FolderFunBg and ExplorerBgTool at the same time.** Both hook
 > `FillRect`/`DirectUIHWND`; two hook stacks can crash Explorer.
