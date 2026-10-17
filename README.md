@@ -61,9 +61,16 @@ verify it.
 - `installer` — elevated install/uninstall scripts and the self-contained
   setup EXE project.
 
-See `docs/architecture.md` for the hook mechanics, `docs/compatibility.md` for
-the support matrix, and `docs/tutorial.md` for a guided learner's tour of the
-Windows concepts used here.
+## Documentation
+
+- [Installation and setup guide](docs/install-guide.md) — screenshots, first-run
+  setup, uninstall, and troubleshooting.
+- [Learner's tutorial](docs/tutorial.md) — a quick tour of the Windows concepts.
+- [Learning path](docs/learning/README.md) — a chapter-based course with labs,
+  self-check questions, and capstones for budding engineers.
+- [Code tour](docs/learning/code-tour.md) — a file-by-file reading order.
+- [Architecture](docs/architecture.md) — components and hook flow.
+- [Compatibility](docs/compatibility.md) — support matrix and manual tests.
 
 ## Prerequisites
 

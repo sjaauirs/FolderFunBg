@@ -18,27 +18,31 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Spacing="12" MinWidth="340">
+                <StackPanel Grid.Column="0" Spacing="12" Width="360">
                     <ComboBox
                         x:Name="ImageBox"
                         Width="320"
+                        HorizontalAlignment="Left"
                         Header="Default image"
                         PlaceholderText="None"
                         SelectionChanged="Preview_SelectionChanged" />
                     <ComboBox
                         x:Name="PositionBox"
                         Width="220"
+                        HorizontalAlignment="Left"
                         Header="Position"
                         SelectionChanged="Preview_SelectionChanged" />
                     <NumberBox
                         x:Name="AlphaBox"
                         Width="220"
+                        HorizontalAlignment="Left"
                         Header="Image alpha (0-255)"
                         Minimum="0"
                         Maximum="255"
                         ValueChanged="Preview_ValueChanged" />
                     <ToggleSwitch
                         x:Name="RandomSwitch"
+                        HorizontalAlignment="Left"
                         Header="Pick a random image"
                         Toggled="Preview_Toggled" />
 
@@ -46,17 +50,20 @@
                     <ComboBox
                         x:Name="ReadabilityBox"
                         Width="220"
+                        HorizontalAlignment="Left"
                         Header="Scrim mode"
                         SelectionChanged="Preview_SelectionChanged" />
                     <NumberBox
                         x:Name="ScrimBox"
                         Width="220"
+                        HorizontalAlignment="Left"
                         Header="Scrim strength (0-255)"
                         Minimum="0"
                         Maximum="255"
                         ValueChanged="Preview_ValueChanged" />
                     <ToggleSwitch
                         x:Name="GradientSwitch"
+                        HorizontalAlignment="Left"
                         Header="Left-to-right gradient"
                         Toggled="Preview_Toggled" />
 
@@ -78,6 +85,7 @@
                     Grid.Column="1"
                     Width="480"
                     Height="270"
+                    VerticalAlignment="Top"
                     Background="#202020">
                     <Image x:Name="PreviewImage" Stretch="UniformToFill" />
                     <Rectangle x:Name="ScrimRect" Fill="Transparent" />

@@ -10,6 +10,16 @@ to be an expert, but you should be comfortable reading C++, C#, and PowerShell.
 > Never install two Explorer hooking tools at once. The full disclaimer is at
 > the end.
 
+## Start here
+
+- **Just want it installed?** Read the
+  [installation and setup guide](install-guide.md) with screenshots.
+- **Want a structured course with labs?** Start the
+  [learning path](learning/README.md). Each chapter expands a section of this
+  tour and ends with exercises.
+- **Want a single quick tour?** Keep reading below.
+- **Want to read the code?** Use the [code tour](learning/code-tour.md).
+
 ---
 
 ## 1. What you are building
