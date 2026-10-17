@@ -69,7 +69,7 @@
                         TextWrapping="Wrap"
                         Opacity="0.7" />
                     <TextBlock
-                        Text="Windows 11 composites the image above the file list in this preview. Keep the image in a corner and/or lower its alpha to keep file names readable."
+                        Text="Backgrounds render beneath file names. In the GDI fallback mode, the image can cover names; use a corner position or lower alpha."
                         TextWrapping="Wrap"
                         Opacity="0.7" />
                 </StackPanel>

@@ -7,6 +7,8 @@
 
 #include "../../third_party/minhook/MinHook.h"
 
+#include <oleacc.h>
+
 namespace FolderFunBg::Hooks
 {
     namespace
@@ -20,6 +22,279 @@ namespace FolderFunBg::Hooks
         std::unordered_map<DWORD, std::unordered_map<HWND, WindowState>> g_windows;
         std::unordered_map<DWORD, std::wstring> g_locations;
         std::atomic<bool> g_installed{false};
+        std::atomic<bool> g_duiAvailable{false};
+
+        using PaintBackground_t = void(__fastcall*)(void*, HDC, void*, const RECT*, const RECT*, const RECT*, const RECT*);
+        using ElementGetAccRole_t = int(__fastcall*)(void*);
+        using ElementGetRoot_t = void*(__fastcall*)(void*);
+        using ElementGetRootRelativeBounds_t = long(__fastcall*)(void*, RECT*);
+
+        PaintBackground_t g_originalPaintBackground = nullptr;
+        ElementGetAccRole_t g_getAccRole = nullptr;
+        ElementGetRoot_t g_getRoot = nullptr;
+        ElementGetRootRelativeBounds_t g_getRootRelativeBounds = nullptr;
+
+        std::wstring RectText(const RECT* rect)
+        {
+            if (rect == nullptr)
+            {
+                return L"null";
+            }
+
+            std::wostringstream stream;
+            stream << L"(" << rect->left << L","
+                   << rect->top << L","
+                   << rect->right << L","
+                   << rect->bottom << L")";
+            return stream.str();
+        }
+
+        thread_local HDC g_duiHdc = nullptr;
+        thread_local bool g_duiDrewForHdc = false;
+
+        void DrawConfiguredBackground(HDC hdc, const RECT& area, int triggerRole)
+        {
+            try
+            {
+                auto config = AppState::Instance().GetConfig();
+                if (!config || hdc == nullptr)
+                {
+                    return;
+                }
+
+                std::wstring location;
+                {
+                    std::lock_guard lock(g_stateMutex);
+                    const auto iterator = g_locations.find(GetCurrentThreadId());
+                    if (iterator != g_locations.end())
+                    {
+                        location = iterator->second;
+                    }
+                }
+
+                const auto resolved = config->Resolve(location);
+                if (resolved.alpha <= 0)
+                {
+                    return;
+                }
+
+                const std::wstring fileName = resolved.random
+                    ? config->PickRandomImage()
+                    : resolved.image;
+                const auto imagePath = config->ImagePath(fileName);
+                if (imagePath.empty())
+                {
+                    return;
+                }
+
+                auto image = AppState::Instance().GetImageCache().Get(imagePath);
+                if (!image)
+                {
+                    return;
+                }
+
+                const int areaWidth = area.right - area.left;
+                const int areaHeight = area.bottom - area.top;
+                if (areaWidth <= 0 || areaHeight <= 0)
+                {
+                    return;
+                }
+
+                const SIZE imageSize = image->Size();
+                int x = 0;
+                int y = 0;
+                int width = imageSize.cx;
+                int height = imageSize.cy;
+
+                switch (resolved.position)
+                {
+                case Position::TopLeft:
+                    break;
+                case Position::TopRight:
+                    x = areaWidth - imageSize.cx;
+                    break;
+                case Position::BottomLeft:
+                    y = areaHeight - imageSize.cy;
+                    break;
+                case Position::BottomRight:
+                    x = areaWidth - imageSize.cx;
+                    y = areaHeight - imageSize.cy;
+                    break;
+                case Position::Center:
+                    x = (areaWidth - imageSize.cx) / 2;
+                    y = (areaHeight - imageSize.cy) / 2;
+                    break;
+                case Position::Stretch:
+                    x = 0;
+                    y = 0;
+                    width = areaWidth;
+                    height = areaHeight;
+                    break;
+                case Position::ZoomFill:
+                {
+                    const double scale = std::max(
+                        static_cast<double>(areaWidth) / imageSize.cx,
+                        static_cast<double>(areaHeight) / imageSize.cy);
+                    width = static_cast<int>(std::lround(imageSize.cx * scale));
+                    height = static_cast<int>(std::lround(imageSize.cy * scale));
+                    x = (areaWidth - width) / 2;
+                    y = (areaHeight - height) / 2;
+                    break;
+                }
+                }
+
+                const int saved = SaveDC(hdc);
+                if (saved == 0)
+                {
+                    return;
+                }
+
+                SelectClipRgn(hdc, nullptr);
+                IntersectClipRect(hdc, area.left, area.top, area.right, area.bottom);
+                image->Draw(
+                    hdc,
+                    area.left + x,
+                    area.top + y,
+                    width,
+                    height,
+                    static_cast<BYTE>(resolved.alpha));
+
+                RECT imageRect{
+                    area.left + x,
+                    area.top + y,
+                    area.left + x + width,
+                    area.top + y + height};
+                DrawReadabilityScrim(
+                    hdc,
+                    imageRect,
+                    resolved.readability,
+                    config->LightTheme(),
+                    image->Luminance());
+                RestoreDC(hdc, saved);
+
+                static std::atomic<int> drawLogCount{0};
+                if (drawLogCount.fetch_add(1) < 20)
+                {
+                    Logging::Info(
+                        L"DUI-DRAW role=" + std::to_wstring(triggerRole) +
+                        L" area=" + RectText(&area) +
+                        L" image=" + imagePath);
+                }
+            }
+            catch (...)
+            {
+                Logging::Error(L"DUI draw failed.");
+            }
+        }
+
+        void __fastcall HookPaintBackground(
+            void* self,
+            HDC hdc,
+            void* value,
+            const RECT* rect,
+            const RECT* clip,
+            const RECT* exclude,
+            const RECT* target)
+        {
+            if (g_originalPaintBackground != nullptr)
+            {
+                g_originalPaintBackground(self, hdc, value, rect, clip, exclude, target);
+            }
+
+            try
+            {
+                if (self == nullptr || hdc == nullptr || rect == nullptr)
+                {
+                    return;
+                }
+
+                const int role = g_getAccRole != nullptr ? g_getAccRole(self) : -1;
+                if (role != ROLE_SYSTEM_LIST && role != ROLE_SYSTEM_LISTITEM)
+                {
+                    return;
+                }
+
+                if (hdc != g_duiHdc)
+                {
+                    g_duiHdc = hdc;
+                    g_duiDrewForHdc = false;
+                }
+
+                if (g_duiDrewForHdc)
+                {
+                    return;
+                }
+
+                void* root = g_getRoot != nullptr ? g_getRoot(self) : nullptr;
+                RECT listRect{};
+                if (root != nullptr && g_getRootRelativeBounds != nullptr)
+                {
+                    g_getRootRelativeBounds(root, &listRect);
+                }
+
+                if (listRect.right - listRect.left > 300 &&
+                    listRect.bottom - listRect.top > 200)
+                {
+                    g_duiDrewForHdc = true;
+                    DrawConfiguredBackground(hdc, listRect, role);
+                }
+            }
+            catch (...)
+            {
+                Logging::Error(L"DUI background paint failed.");
+            }
+        }
+
+        bool InstallDuiBackground()
+        {
+            HMODULE module = GetModuleHandleW(L"dui70.dll");
+            if (module == nullptr)
+            {
+                module = LoadLibraryExW(L"dui70.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+            }
+
+            if (module == nullptr)
+            {
+                Logging::Error(L"DUI background:dui70.dll is not available.");
+                return false;
+            }
+
+            const auto paint = GetProcAddress(
+                module,
+                "?PaintBackground@Element@DirectUI@@QEAAXPEAUHDC__@@PEAVValue@2@AEBUtagRECT@@222@Z");
+            if (paint == nullptr)
+            {
+                Logging::Error(L"DUI background:PaintBackground export not found.");
+                return false;
+            }
+
+            g_getAccRole = reinterpret_cast<ElementGetAccRole_t>(
+                GetProcAddress(module, "?GetAccRole@Element@DirectUI@@QEAAHXZ"));
+            g_getRoot = reinterpret_cast<ElementGetRoot_t>(
+                GetProcAddress(module, "?GetRoot@Element@DirectUI@@QEAAPEAV12@XZ"));
+            g_getRootRelativeBounds = reinterpret_cast<ElementGetRootRelativeBounds_t>(
+                GetProcAddress(module, "?GetRootRelativeBounds@Element@DirectUI@@QEAAJPEAUtagRECT@@@Z"));
+
+            if (g_getAccRole == nullptr ||
+                g_getRoot == nullptr ||
+                g_getRootRelativeBounds == nullptr)
+            {
+                Logging::Error(L"DUI background:required element exports not found.");
+                return false;
+            }
+
+            if (MH_CreateHook(
+                    paint,
+                    reinterpret_cast<LPVOID>(&HookPaintBackground),
+                    reinterpret_cast<LPVOID*>(&g_originalPaintBackground)) != MH_OK)
+            {
+                Logging::Error(L"DUI background:MinHook could not hook PaintBackground.");
+                return false;
+            }
+
+            Logging::Info(L"DUI background: PaintBackground hook installed.");
+            return true;
+        }
 
         using CreateWindowExW_t = HWND(WINAPI*)(DWORD, LPCWSTR, LPCWSTR, DWORD, int, int, int, int, HWND, HMENU, HINSTANCE, LPVOID);
         using DestroyWindow_t = BOOL(WINAPI*)(HWND);
@@ -269,6 +544,7 @@ namespace FolderFunBg::Hooks
             const HDC hdc = g_originalBeginPaint(hwnd, paint);
             if (hdc != nullptr)
             {
+                g_duiDrewForHdc = false;
                 std::lock_guard lock(g_stateMutex);
                 const auto thread = g_windows.find(GetCurrentThreadId());
                 if (thread != g_windows.end())
@@ -287,7 +563,10 @@ namespace FolderFunBg::Hooks
         int WINAPI HookFillRect(HDC hdc, const RECT* rect, HBRUSH brush)
         {
             const int result = g_originalFillRect(hdc, rect, brush);
-            DrawBackground(hdc, rect);
+            if (!g_duiAvailable.load())
+            {
+                DrawBackground(hdc, rect);
+            }
             return result;
         }
 
@@ -351,6 +630,15 @@ namespace FolderFunBg::Hooks
                 reinterpret_cast<LPVOID>(&CreateCompatibleDC),
                 reinterpret_cast<LPVOID>(&HookCreateCompatibleDC),
                 reinterpret_cast<LPVOID*>(&g_originalCreateCompatibleDC)) == MH_OK;
+
+        if (created)
+        {
+            g_duiAvailable = InstallDuiBackground();
+            if (!g_duiAvailable.load())
+            {
+                Logging::Error(L"DUI background hook installation failed; using overlay fallback.");
+            }
+        }
 
         if (!created || MH_EnableHook(MH_ALL_HOOKS) != MH_OK)
         {

@@ -7,9 +7,10 @@ stay running.
 
 > Status: early preview. The native hook, config core, WinUI app, unit tests,
 > page smoke test, and on-machine install have been verified on Windows 11 x64.
-> The previous `ExplorerBgTool` BHO has been unregistered. On this Windows build,
-> Explorer composites the hook's image above the file list, so use corner
-> positions and/or lower alpha when the image overlaps file names.
+> The previous `ExplorerBgTool` BHO has been unregistered. On Windows 11 the
+> DirectUI `PaintBackground` hook paints the image beneath file icons and names;
+> if it cannot install, the GDI fallback is composited above the items, so use
+> corner positions and/or lower alpha when the image overlaps file names.
 
 ## Features
 
@@ -18,8 +19,8 @@ stay running.
 - Browse folders and import images from the WinUI settings app.
 - Readability scrim: auto, light, dark, or none, with adjustable strength and a
   left-to-right gradient. Auto uses the image luminance and the Windows
-  light/dark theme. On this Windows build the image is composited above the
-  file list; use a corner position or lower alpha when it overlaps names.
+  light/dark theme. The scrim is painted with the background, beneath file
+  icons and names.
 - Tray-less and settings-only. Explorer loads the extension automatically;
   closing the settings app leaves backgrounds active.
 - Per-user configuration and images under `%LOCALAPPDATA%\FolderFunBg`.
@@ -29,8 +30,10 @@ stay running.
 ## Architecture
 
 - `src/FolderFunBg.Hook` — native x64 COM Browser Helper Object. It detects
-  Explorer's `DirectUIHWND` folder view, hooks the background erase path with
-  MinHook, and draws the image plus readability scrim with GDI+.
+  Explorer's `DirectUIHWND` folder view and hooks DirectUI's
+  `Element::PaintBackground` with MinHook so the image and readability scrim are
+  painted beneath file icons and names. If that hook is unavailable it falls
+  back to the GDI background erase path.
 - `src/FolderFunBg.Core` — config model, path/CLSID rule resolution,
   validation, atomic writes, image library, and legacy `config.ini` migration.
 - `src/FolderFunBg.Settings` — WinUI 3 settings app.
@@ -176,8 +179,7 @@ directory and reloads without a separate process. A sample is in
 
 ## Readability
 
-Explorer draws filenames and icons after the background erase. FolderFunBg
-draws a scrim in that same pass, between the image and the items:
+FolderFunBg paints the scrim with the image, beneath the file icons and names:
 
 - `auto` — light theme + dark image → white scrim; dark theme + light image →
   black scrim. Strength scales with how far the image is from the readable
@@ -186,24 +188,22 @@ draws a scrim in that same pass, between the image and the items:
 - `none` — no scrim.
 - `gradient` — strongest over the left file-name column, fading to transparent.
 
-The scrim mutes the image and improves its contrast, but text underneath an
-opaque image is still covered on this Windows build. Use a corner position or
-lower `alpha` when the image overlaps the file list. The Defaults page preview
-approximates auto with the current theme.
+The scrim mutes the image and improves contrast; the image stays behind the
+file names. The Defaults page preview approximates auto with the current theme.
 
-## Rendering limitation on Windows 11
+## Rendering on Windows 11
 
-The current hook draws in Explorer's GDI background layer. On Windows 11 build
-26220 that layer is composited **above** the item text, so an image can cover
-file names where it overlaps. The previous `ExplorerBgTool` uses the same
-`FillRect` technique; its bottom-right default makes the limitation less
-visible. FolderFunBg defaults to bottom-right and warns in the UI.
+FolderFunBg draws in Explorer's DirectUI background layer
+(`DirectUI::Element::PaintBackground` in `dui70.dll`), which runs beneath the
+file icons and filenames. Centered, stretched, and zoom-filled images therefore
+stay behind text.
 
-Practical mitigations: corner positions, smaller images, or `alpha` below 255.
-A true behind-the-icons background needs a shell view extension (`IShellView`
-wrapper) or composition-level integration; that is future work. The legacy
-`desktop.ini` `IconArea_Image` feature was tested and is no longer honored on
-this Windows build.
+If the DirectUI hook cannot be installed (for example after an Explorer update
+renames the exported method), FolderFunBg falls back to the older GDI
+`FillRect` path. On Windows 11 build 26220 that fallback is composited above
+the item text; in fallback mode use corner positions, smaller images, or
+`alpha` below 255. The legacy `desktop.ini` `IconArea_Image` feature does not
+work on this build.
 
 ## Safety and compatibility
 

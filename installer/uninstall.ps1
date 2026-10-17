@@ -19,6 +19,14 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 
 $destination = Join-Path $env:ProgramFiles "FolderFunBg"
 $target = Join-Path $destination "FolderFunBg.Hook.dll"
+
+# Explorer keeps the hook loaded and Windows cannot delete a loaded image.
+# Stop Explorer first; the shell is started again below.
+if ($RestartExplorer) {
+    Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Milliseconds 700
+}
+
 if (Test-Path -LiteralPath $target) {
     & regsvr32.exe /s /u $target
 }
@@ -27,7 +35,19 @@ $clsid = "{80BDC533-D192-445A-A1D9-F91310021919}"
 Remove-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer\Browser Helper Objects\$clsid" -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item "HKLM:\SOFTWARE\Classes\Drive\shellex\FolderExtensions\$clsid" -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item "HKLM:\SOFTWARE\Classes\CLSID\$clsid" -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item $destination -Recurse -Force -ErrorAction SilentlyContinue
+
+for ($attempt = 0; $attempt -lt 20; $attempt++) {
+    try {
+        if (Test-Path -LiteralPath $destination) {
+            Remove-Item $destination -Recurse -Force -ErrorAction Stop
+        }
+        break
+    }
+    catch {
+        Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Milliseconds 250
+    }
+}
 
 if ($RestartExplorer) {
     Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue

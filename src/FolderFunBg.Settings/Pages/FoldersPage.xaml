@@ -32,7 +32,7 @@
 
         <TextBlock
             Grid.Row="2"
-            Text="Windows 11 composites the image above the file list in this preview. Use a corner position and/or a lower alpha; center, stretch, and zoom-fill can cover file names."
+            Text="Backgrounds render beneath file names. In the GDI fallback mode, center, stretch, and zoom-fill can cover names; use a corner position or lower alpha."
             TextWrapping="Wrap"
             Opacity="0.75"
             Margin="0,0,0,12" />

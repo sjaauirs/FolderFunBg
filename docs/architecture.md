@@ -12,7 +12,8 @@ FolderFunBg.Settings (C# WinUI 3)
 explorer.exe
   └─ FolderFunBg.Hook.dll (native x64 COM BHO)
        ├─ IObjectWithSite + DWebBrowserEvents2 (DOCUMENTCOMPLETE)
-       ├─ MinHook: CreateWindowExW, DestroyWindow, BeginPaint, FillRect, CreateCompatibleDC
+       ├─ MinHook: CreateWindowExW, DestroyWindow, BeginPaint, FillRect,
+       │  CreateCompatibleDC, dui70!Element::PaintBackground
        ├─ detects DirectUIHWND under SHELLDLL_DefView
        ├─ GDI+ image cache + AlphaBlend
        └─ readability scrim (GDI+ gradient/solid)
@@ -50,31 +51,35 @@ preview.
    HWND is tracked per Explorer thread.
 3. `BeginPaint` records the HDC for the tracked HWND. `CreateCompatibleDC`
    associates a memory DC with the tracked window.
-4. `FillRect` calls the original background erase, then:
-   - finds the tracked window for the HDC/thread,
+4. `dui70!DirectUI::Element::PaintBackground` is hooked. When Explorer paints
+   the folder view (`ROLE_SYSTEM_LIST`) or a file item (`ROLE_SYSTEM_LISTITEM`),
+   the first background paint for each HDC:
    - resolves the current folder path to a rule (`DOCUMENTCOMPLETE` supplies
      the path),
    - computes the position/size for the configured mode,
-   - clips to the dirty rect,
+   - clips to the DirectUI root bounds,
    - `AlphaBlend`s the cached image,
    - draws the readability scrim,
    - restores the DC.
-5. `DestroyWindow` removes tracking. Config changes trigger a reload and
+   Drawing at this layer puts the image beneath the file icons and names.
+5. If the DirectUI hook cannot be installed, `FillRect` calls the original
+   background erase and then draws the same image on the GDI layer. On Windows
+   11 build 26220 that fallback is composited above the item text.
+6. `DestroyWindow` removes tracking. Config changes trigger a reload and
    `InvalidateRect` on tracked windows.
 
 The hook never throws across an Explorer callback; failures are logged and the
 background is skipped.
 
-### Rendering limitation on Windows 11 26220
+### Rendering on Windows 11
 
-The `FillRect` GDI layer is composited **above** the DirectUI item text on this
-build. An opaque image therefore covers file names where it overlaps. The old
-`ExplorerBgTool` uses the same technique; a bottom-right placement makes the
-overlap less noticeable. Mitigations in FolderFunBg are corner positions,
-smaller images, and lower `alpha`. A true behind-the-icons background requires
-a shell view wrapper (`IShellView`) or composition-level integration; the
-legacy `desktop.ini` `IconArea_Image` was tested and is no longer honored on
-this build.
+FolderFunBg prefers the DirectUI `Element::PaintBackground` layer, which runs
+beneath the file icons and filenames. The hook exports are version-sensitive;
+if a Windows update removes or renames them, the hook logs the failure and uses
+the `FillRect` fallback instead. On build 26220 the fallback is composited
+**above** the item text, so an opaque image can cover file names where it
+overlaps; use corner positions, smaller images, or lower `alpha` in that mode.
+The legacy `desktop.ini` `IconArea_Image` is not honored on this build.
 
 ## Config and rule resolution
 

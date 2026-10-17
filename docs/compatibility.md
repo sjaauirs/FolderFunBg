@@ -23,12 +23,12 @@
 
 - There is no supported Windows API for per-folder backgrounds. This is a
   version-sensitive in-Explorer hook; a Windows/Explorer update can break it.
-- On Windows 11 build 26220, the hook's GDI layer is composited above the item
-  text. Large or centered images can cover file names. Use corner positions,
-  smaller images, or lower `alpha`. A true behind-the-icons background requires
-  a shell view extension (`IShellView`) or composition-level integration. The
-  legacy `desktop.ini` `IconArea_Image` feature was tested and does not work on
-  this build.
+- On Windows 11 the DirectUI `PaintBackground` hook renders the image beneath
+  file icons and names. If that hook cannot be installed (for example after an
+  Explorer update renames the exported method), the GDI `FillRect` fallback is
+  composited above the item text on build 26220; in fallback mode use corner
+  positions, smaller images, or lower `alpha`. The legacy `desktop.ini`
+  `IconArea_Image` feature does not work on this build.
 - A malformed image can destabilize GDI+ and Explorer. Import images through
   the app so signatures are validated, and avoid replacing files underneath a
   running Explorer.
